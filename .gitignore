@@ -3,6 +3,7 @@ data/
 checkpoints/
 wandb/
 cache/
-results/
 logs/
 __pycache__/
+.ua/
+results/Untitled
