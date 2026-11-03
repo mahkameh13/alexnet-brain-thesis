@@ -1,0 +1,8 @@
+venv/
+data/
+checkpoints/
+wandb/
+cache/
+results/
+logs/
+__pycache__/

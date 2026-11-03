@@ -1,0 +1,11 @@
+# Install with: pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu126
+# (the cluster has V100 GPUs; the default CUDA-13 PyTorch build does NOT support them)
+torch
+torchvision
+numpy
+scipy
+pandas
+matplotlib
+pillow
+wandb
+tqdm
