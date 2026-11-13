@@ -1,21 +1,44 @@
-# AlexNet vs infant/adult brain RSA
+# Developmental alignment with coarse objectives
 
-Status: Stage 5 RUNNING since 2026-11-03 01:17 on the ORIGINAL full-resolution ImageNet (/home/data/ImageNet/ILSVRC/Data/CLS-LOC), 3 seeds in parallel on GPUs 0,1,2, 24 loader workers each. Supervisor in tmux session alexnet_pipeline.
-Stages: 1 inspect -> 2 brain data + stimuli -> 3 RSA with pretrained AlexNet -> 4 training script -> 5 three seeded runs + RSA over checkpoints.
-Logging: local logs in logs/; Weights & Biases planned (needs user login, see below).
+Bachelor thesis code (Mahkameh). Question: does training make an image network's representations more like infant (2-month, 9-month) or adult brains?
 
-## How to run
-- Stage 3: `WANDB_BASE_URL=https://api.forge.coreweave.com ./venv/bin/python stage3_pretrained_rsa.py --wandb --project alexnet-brain` (CPU only; helper code in rsa_lib.py)
-- Note: brain matrices in ds006883 are stored as similarities (verified: same-category pairs higher); rsa_lib flips the sign.
+Method (RSA): show the 36 FOUNDCOG stimulus images to a network in eval mode, read 7 layers (conv1-conv5, fc1, fc2, after ReLU), build a 36x36 model RDM (1 - Pearson r), and Spearman-correlate it with the brain RDMs of each age group and region (VVC, LOC, V1). Brain RDMs: OpenNeuro ds006883 derivatives (O'Doherty et al., Nature Neuroscience 2025). Repeat for every training checkpoint to get curves over training.
 
-## Check status (while the experiment runs)
-- `tmux ls` : sessions alexnet_seed0/1/2 (training) and alexnet_pipeline (supervisor). Look inside: `tmux attach -t alexnet_seed0` (detach with Ctrl-b then d).
-- `tail logs/auto_pipeline.log` : supervisor decisions (launch, stop, restart, finish).
-- `tail logs/train_alexnet_seed0.jsonl` : per-epoch loss/accuracy and checkpoint paths. Same data in W&B project alexnet-brain.
-- When everything ends the supervisor runs RSA on all checkpoints and writes: results/SUMMARY.md, results/rsa_alexnet_seed*.csv, results/rsa_across_training_*.png
-- Stop everything by hand: `tmux kill-server`  (training can be resumed later with ./run_seed.sh <seed> <gpu>).
-- Checkpoints: checkpoints/alexnet_seed<N>/ (244 MB each, ~14 GB total). Delete them when no longer needed.
-- Environment note: PyTorch must be the CUDA 12.6 build (V100 GPUs); see requirements.txt.
+Reference paper: Mehta & Bonner, arXiv 2605.05556. Its code: github.com/yashsmehta/visreps (we use commit 43ba5e2).
 
-## Dataset note
-Training first started on /home/data/ILSVRC_real (a 256-px-shorter-side resized copy, labels verified identical to the official devkit). At Mahkameh's request the runs were restarted on the ORIGINAL full-resolution ImageNet: /home/data/ImageNet/ILSVRC/Data/CLS-LOC (val labels from /home/data/ImageNet/LOC_val_solution.csv). Old logs: logs/old_run_256px_resized/.
+## Weekly updates
+
+**Week of 26 Oct.** Direction agreed with advisors: infant fMRI data, AlexNet on ImageNet-1k with 3 seeds, coarse-to-fine curriculum later.
+
+**Week 1.** RSA pipeline built and checked on pretrained torchvision AlexNet. Our own AlexNet trained 3 times for 20 epochs on full-resolution ImageNet (top-1 50.5% on the official val set), RSA on 17 checkpoints per seed. Training makes the network more brain-like, and more like 9-month-olds and adults than 2-month-olds (VVC, fc2: rho about 0.45 / 0.43 / 0.28).
+
+**Week 2 (advisor TODOs from 03/11/2026).**
+1. Retrained with the paper's own code and recipe (CustomCNN, 3 seeds, 20 epochs, a checkpoint every epoch). Top-1 54.2-55.1% on the repo's held-out 20% split. RSA recomputed with the same pipeline.
+2. Plots over training: mean +- 1 std across seeds, week-1 run as a dashed shadow, pretrained AlexNet dotted (`results/rsa_paper_vs_old_*.png`). The paper's CNN matches VVC best early in training (about epoch 3), then its late layers drift away. 2-month-olds remain the least matched group.
+3. WordNet vs PCA label overlap (`results/relabel_overlap/`): Jaccard heatmaps and adjusted Rand index. WordNet N = 2-4 are extremely unbalanced; best agreement WordNet 10 vs CLIP-PCA 2 (ARI 0.61).
+
+## Files
+
+| File | What it does |
+|---|---|
+| `rsa_lib.py` | Shared toolbox: stimuli, brain RDMs (stored as similarities, sign flipped), layer activations, model RDM, Spearman, bootstrap CI |
+| `stage3_pretrained_rsa.py` | Sanity check on pretrained torchvision AlexNet |
+| `train.py`, `run_seed.sh` | Week 1 training (torchvision AlexNet, SGD, 20 epochs) |
+| `auto_pipeline.py` | Week 1 supervisor: runs 3 seeds, restarts failed runs, then RSA and plots |
+| `rsa_checkpoints.py`, `plot_rsa_checkpoints.py` | Week 1 RSA over checkpoints and figures |
+| `verify_imagenet.py`, `check_images.py`, `inspect_rdms*.py` | Data checks |
+| `rsa_checkpoints_paper.py` | Week 2 RSA on the paper-recipe checkpoints |
+| `plot_rsa_paper_vs_old.py` | Week 2 figures (TODO 2) |
+| `relabel_overlap.py` | WordNet vs PCA label comparison (TODO 3) |
+| `after_paper_training.sh`, `log_paper_rsa_wandb.py` | Week 2 automation: RSA + plots while training, then upload to W&B |
+| `visreps_changes/` | Our launch script for the paper's code and the patch of our logging-only edits to visreps |
+| `results/` | CSVs and figures for both weeks |
+
+Not in git (too large or not ours): `venv/`, `data/` (brain data), `checkpoints/`, `logs/`, `wandb/`. Week-2 checkpoints live in the visreps clone on the server. All runs are also logged in the W&B project `alexnet-brain`.
+
+## Reproduce week 2
+1. `git clone https://github.com/yashsmehta/visreps && cd visreps && git checkout 43ba5e2 && git apply ../alexnet_brain/visreps_changes/visreps_logging.patch`
+2. Copy `visreps_changes/run_paper_seed.sh` into the visreps folder and run `./run_paper_seed.sh <seed 1-3> <gpu>`.
+3. In this folder: `./after_paper_training.sh` (or run `rsa_checkpoints_paper.py --seed N` and `plot_rsa_paper_vs_old.py` by hand).
+
+Environment: Python 3.12, PyTorch CUDA 12.6 build (V100 GPUs), see `requirements.txt`.
