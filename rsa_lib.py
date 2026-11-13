@@ -75,12 +75,25 @@ def load_stimuli(labels, size=224, resize=256):
 
 
 # --------------------------------------------------------------------------- activations
+# Same 7 layers (post-ReLU) in the paper's AlexNet-style CustomCNN (visreps repo), which has a
+# BatchNorm between each conv/linear layer and its ReLU, so the indices differ from torchvision.
+CUSTOMCNN_LAYERS = {
+    "conv1": ("features", 2),
+    "conv2": ("features", 6),
+    "conv3": ("features", 10),
+    "conv4": ("features", 13),
+    "conv5": ("features", 16),
+    "fc1": ("classifier", 3),
+    "fc2": ("classifier", 7),
+}
+
+
 @torch.no_grad()
-def extract_activations(model, images, device="cpu"):
-    """Return {layer_name: array (n_images, n_features)} for the 7 AlexNet layers."""
+def extract_activations(model, images, device="cpu", layers=ALEXNET_LAYERS):
+    """Return {layer_name: array (n_images, n_features)} for the 7 layers in `layers`."""
     model = model.to(device).eval()  # eval mode: dropout OFF, so activations are deterministic
     acts, hooks = {}, []
-    for name, (part, idx) in ALEXNET_LAYERS.items():
+    for name, (part, idx) in layers.items():
         module = getattr(model, part)[idx]
         hooks.append(module.register_forward_hook(
             lambda m, i, o, name=name: acts.__setitem__(name, o.detach().flatten(1).cpu().numpy().copy())))

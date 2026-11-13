@@ -1,0 +1,53 @@
+diff --git a/visreps/trainer.py b/visreps/trainer.py
+index 5f3109e..2fdc346 100644
+--- a/visreps/trainer.py
++++ b/visreps/trainer.py
+@@ -25,6 +25,7 @@ class Trainer:
+ 
+         # Data and model setup
+         self.datasets, self.loaders = get_obj_cls_loader(self.cfg)
++        self.cfg.train_loader_len = len(self.loaders["train"])  # [Mahkameh] needed by the W&B step logging, never set upstream
+         num_classes = self.cfg.pca_n_classes if self.cfg.pca_labels else self.datasets["train"].num_classes
+         self.model = model_utils.load_model(self.cfg, self.device, num_classes=num_classes)
+         label_smoothing = self.cfg.get("label_smoothing", 0.1)
+diff --git a/visreps/utils.py b/visreps/utils.py
+index 81aa438..880372f 100644
+--- a/visreps/utils.py
++++ b/visreps/utils.py
+@@ -173,20 +173,21 @@ class MetricsLogger:
+                 name = f"{cfg.model_name}_{cfg.model_class}"
+                 tags = [cfg.model_class, f"lr_{cfg.learning_rate}"]
+ 
++                # [Mahkameh] log to our own W&B account/project instead of the authors' "visreps" team
+                 wandb.init(
+-                    entity="visreps",
+-                    project=cfg.dataset,
++                    entity=os.environ.get("WANDB_ENTITY"),
++                    project=os.environ.get("WANDB_PROJECT", cfg.dataset),
+                     group=group,
+-                    name=name,
++                    name=f"paper_recipe_seed{cfg.seed}",
+                     config=OmegaConf.to_container(cfg, resolve=True),
+                     tags=tags,
+                     notes=f"Training {cfg.model_name} with seed {cfg.seed}",
+-                    settings=wandb.Settings(start_method="thread"),
++                    # [Mahkameh] removed settings=wandb.Settings(start_method="thread"): rejected by current wandb
+                 )
+                 
+                 # Use epoch as x-axis for all metrics
+                 wandb.define_metric("*", step_metric="epoch")
+-                rprint(f"WandB initialized. View results at: {wandb.run.get_url()}", style="info")
++                rprint(f"WandB initialized. View results at: {wandb.run.url}", style="info")  # [Mahkameh] get_url() removed in current wandb
+ 
+             except Exception as e:
+                 rprint(f"W&B initialization failed: {str(e)}", style="error")
+@@ -246,7 +247,8 @@ class MetricsLogger:
+ 
+     def log_training_step(self, epoch, batch_idx, loss, lr):
+         """Log training step metrics to wandb."""
+-        if self.use_wandb:
++        # [Mahkameh] log every 50 batches (not every batch) to keep W&B light
++        if self.use_wandb and batch_idx % 50 == 0:
+             try:
+                 fractional_epoch = epoch - 1 + (batch_idx / self.cfg.train_loader_len)
+                 wandb.log({
