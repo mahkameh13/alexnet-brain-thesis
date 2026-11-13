@@ -51,7 +51,6 @@ check_images.py             decode every image to find corrupt files
 inspect_rdms*.py            print the structure of the FOUNDCOG RDM pickles
 visreps_changes/            launch script + patch for the visreps repo (logging/checkpointing only)
 results/                    committed CSVs and PNGs
-Thesis_Overview_Mahkameh.pdf
 ```
 
 ## Setup
