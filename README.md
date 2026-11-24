@@ -232,7 +232,7 @@ Figures are in `results/`. `results/relabel_overlap/ari_summary.csv` has the lab
 ## Known limitations
 
 - Several paths are absolute and assume `/home/mahkameh/...`: `run_seed.sh`, `after_paper_training.sh`, `visreps_changes/run_paper_seed.sh`, `visreps_changes/run_alexnet_paper_seed.sh`, and `~/visreps` in `rsa_checkpoints_paper.py`, `calibrate_bn_imagenet.py` and `eval_imagenet_checkpoints.py`. Edit these before running on another machine.
-- The re-estimated BatchNorm statistics (`cache/bn_imagenet/`) and the W&B training-log export that `plot_wandb_training_logs.py` reads (`results/wandb/`) are gitignored, so you have to regenerate them.
+- The re-estimated BatchNorm statistics (`cache/bn_imagenet/`) are gitignored, so regenerate them with `calibrate_bn_imagenet.py`.
 - `auto_pipeline.py` has the seed→GPU mapping hardcoded (`SEEDS = {0: 0, 1: 1, 2: 2}`) and includes safety rules for a shared cluster (free-GPU and free-disk checks).
 - There is no test suite. `stage3_pretrained_rsa.py` serves as the end-to-end smoke test.
 

@@ -2,7 +2,7 @@
 
   week 1   torchvision AlexNet, our code/recipe        results/rsa_alexnet_seed*.csv           (seeds 0-2)
   week 2   paper's CustomCNN, paper's code/recipe       results/rsa_paper_bnimagenet_seed*.csv  (seeds 1-3, BatchNorm
-           re-estimated on ImageNet; the checkpoint-BatchNorm version is nearly identical except at epoch 0)
+           re-estimated on ImageNet)
   new      torchvision AlexNet, paper's code/recipe     results/rsa_alexnet_paper_recipe_seed*.csv (seeds 1-3)
 
 One figure per region (rows = age groups, columns = layers) and one fc2 summary (rows = age groups, columns =
