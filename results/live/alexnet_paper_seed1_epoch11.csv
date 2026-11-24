@@ -1,0 +1,2 @@
+setup,bn,seed,epoch,step,val_loss,val_loss_median,val_acc,val_top5,n_val,train_loss,train_loss_median,train_acc,train_top5,n_train
+alexnet_paper,none,1,11.0,,4.959856330683464,4.959364891052246,0.10502,0.25826,50000,4.85900973257598,4.860470294952393,0.11458,0.2763,50000

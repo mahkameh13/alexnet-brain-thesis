@@ -1,0 +1,18 @@
+{
+  "model_class": "standard_model",
+  "standard_model": {
+    "model_name": "AlexNet",
+    "pretrained_dataset": "none"
+  },
+  "dropout": 0.5,
+  "augment_type": "mild",
+  "label_smoothing": 0.1,
+  "optimizer": "adamw",
+  "learning_rate": 0.0005,
+  "weight_decay": 0.001,
+  "grad_clip": 1.0,
+  "lr_scheduler": "cosineannealinglr",
+  "num_epochs": 20,
+  "warmup_epochs": 2,
+  "use_amp": true
+}
